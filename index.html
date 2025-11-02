@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía de Patologías Respiratorias</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Minimalist Medical (Warm Neutrals + Calming Blue) -->
+    <!-- Application Structure Plan: Single-view SPA, focused purely on a persistent sidebar menu for disease selection, dynamically updating the tabbed content area (Clínica, Anamnesis, Dx, Tx). TEP and EPOC are marked with '*'. Includes external GIF for humor and an image for TEP presentation. -->
+    <!-- Visualization & Content Choices: The application focuses purely on textual and hierarchical data presentation. Report Info: 10 pathologies, 4 text categories each. Goal: Study/Reference. Presentation: Dynamic HTML lists in a tabbed interface (HTML/JS) for focused text display. Justification: Clearest way to present dense text hierarchically. - CONFIRMING NO SVG/Mermaid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .active-menu {
+            background-color: #2563eb;
+            color: #ffffff;
+        }
+        .active-pathology {
+            background-color: #dbeafe;
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+        .active-tab {
+            border-bottom-color: #2563eb;
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Estilo para la imagen de Homero */
+        .homer-image {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50px; /* Tamaño pequeño */
+            height: 50px;
+            object-fit: cover;
+            border-radius: 9999px; /* Circular */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+
+        /* Contenedor principal de las imágenes */
+        #pathology-image-container {
+            display: flex;
+            flex-wrap: wrap; /* Permitir que las imágenes se envuelvan en pantallas pequeñas */
+            justify-content: center; /* Centrar las imágenes */
+            gap: 1rem; /* Espacio entre las imágenes */
+            margin-bottom: 1.5rem; /* Separación del contenido */
+        }
+        
+        /* Estilo para la tarjeta/recuadro de la imagen, forzando 1:1 */
+        .pathology-image-card {
+            background-color: #ffffff;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Sombra muy sutil */
+            padding: 0.5rem; /* Relleno mínimo */
+            border: 1px solid #f0f0f0; /* Borde muy claro */
+            
+            /* Forzar 1:1 y limitar tamaño */
+            width: 100%; /* Ajustar para que ocupe todo el ancho disponible en su columna */
+            max-width: 250px; /* Tamaño máximo para que no crezca demasiado */
+            height: 250px; /* Altura fija, misma que max-width para 1:1 */
+            overflow: hidden; /* Asegura que la imagen no se salga */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pathology-image-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ajustar/recortar para llenar el 1:1 */
+            border-radius: 0.5rem; 
+        }
+
+        .pathology-image-card .placeholder-tep {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f9ff;
+            border: 2px dashed #38bdf8;
+            border-radius: 0.5rem;
+            color: #0c4a6e;
+        }
+
+        /* Estilo para el caso clínico tipo (azul) */
+        .caso-clinico {
+            border-left: 4px solid #3b82f6; /* blue-500 */
+            background-color: #eff6ff; /* blue-50 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1.5rem;
+            font-style: italic;
+        }
+
+        /* Nuevo estilo para Diagnósticos Diferenciales (verde menta) */
+        .ddx-box {
+            border-left: 4px solid #10b981; /* emerald-500 */
+            background-color: #ecfdf5; /* emerald-50 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        /* Nuevo estilo para títulos pequeños dentro de listas (ej. 1. Diagnóstico) */
+        .subheading {
+            font-size: 1.125rem; /* text-xl */
+            font-weight: 700; /* font-bold */
+            color: #1d4ed8; /* blue-700 */
+        }
+        
+        /* Estilo para Triage/Banderas Rojas (Rojo/Naranja) */
+        .triage-box {
+            border-left: 4px solid #dc2626; /* red-600 */
+            background-color: #fef2f2; /* red-50 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        /* Desactivar el layout grid de clínica, ya que la imagen ya no está ahí */
+        #tab-clinica.active {
+            display: block !important;
+        }
+        
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <header class="bg-white shadow-md w-full relative">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-start items-center h-16">
+                <h1 class="text-2xl font-bold text-blue-700">Guía de Patologías Respiratorias</h1>
+                <!-- NAV REMOVED -->
+            </div>
+        </div>
+        <!-- Imagen de Homero -->
+        <img 
+            src="https://media1.tenor.com/m/FfYjdjpr3bgAAAAd/homer-the-simpsons.gif" 
+            alt="Homero Simpson de humor" 
+            class="homer-image mr-4 mt-2 hidden sm:block" 
+            onerror="console.error('Error al cargar la imagen de Homero'); this.style.display='none';"
+        >
+    </header>
+
+    <div id="app-content" class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+        <section id="view-patologias" class="app-view">
+            <div class="flex flex-col md:flex-row mt-4 gap-4">
+                <aside class="w-full md:w-1/4 lg:w-1/5">
+                    <nav id="pathology-menu" class="bg-white p-4 rounded-lg shadow">
+                        <h3 class="text-lg font-semibold mb-2 text-slate-800">Enfermedades (10) 📚</h3>
+                        <ul class="space-y-1">
+                            <li><button data-id="neumonia" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Neumonía Bacteriana</button></li>
+                            <li><button data-id="asma" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Asma</button></li>
+                            <li><button data-id="covid19" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">COVID-19</button></li>
+                            <li><button data-id="tbc" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">TBC Pulmonar</button></li>
+                            <li><button data-id="cancer" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Cáncer Pulmonar</button></li>
+                            <li><button data-id="empiema" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Empiema Pleural</button></li>
+                            <li><button data-id="absceso" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Absceso Pulmonar</button></li>
+                            <li><button data-id="bronquitis" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Bronquitis Aguda</button></li>
+                            <!-- Patologías Adicionales/Importantes (Marcadas con *) -->
+                            <li><hr class="my-2 border-slate-200"></li>
+                            <li><button data-id="epoc" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100 font-medium">* EPOC</button></li>
+                            <li><button data-id="tep" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100 font-medium">* TEP</button></li>
+                        </ul>
+                         <!-- Mensaje solicitado -->
+                        <p class="mt-4 text-xs text-slate-500">*No son del rolplay.</p>
+                    </nav>
+                </aside>
+                <main class="w-full md:w-3/4 lg:w-4/5">
+                    <div id="pathology-welcome" class="bg-white p-10 rounded-lg shadow flex items-center justify-center min-h-[400px]">
+                        <p class="text-xl text-slate-500 font-medium">✨ Seleccione una patología para comenzar su estudio detallado.</p>
+                    </div>
+
+                    <div id="pathology-details" class="bg-white rounded-lg shadow overflow-hidden hidden">
+                        <div class="p-4 border-b border-slate-200">
+                            <h2 id="pathology-title" class="text-2xl font-bold text-blue-700 mb-2"></h2>
+                            <!-- Contenedor para la imagen de presentación de la patología, ahora movido aquí -->
+                            <div id="pathology-image-container"></div>
+                        </div>
+                        <nav class="flex border-b border-slate-200 bg-slate-50">
+                            <button data-tab="clinica" class="tab-btn py-3 px-5 text-slate-600 border-b-2 border-transparent hover:bg-slate-100">Clínica</button>
+                            <button data-tab="anamnesis" class="tab-btn py-3 px-5 text-slate-600 border-b-2 border-transparent hover:bg-slate-100">Anamnesis y FR</button>
+                            <button data-tab="diagnostico" class="tab-btn py-3 px-5 text-slate-600 border-b-2 border-transparent hover:bg-slate-100">Diagnóstico</button>
+                            <button data-tab="tratamiento" class="tab-btn py-3 px-5 text-slate-600 border-b-2 border-transparent hover:bg-slate-100">Tratamiento</button>
+                        </nav>
+                        <div id="tab-content-container" class="p-5 min-h-[300px]">
+                            <div id="tab-clinica" class="tab-content space-y-3">
+                                <!-- Contenido de clínica -->
+                            </div>
+                            <div id="tab-anamnesis" class="tab-content space-y-3"></div>
+                            <div id="tab-diagnostico" class="tab-content space-y-3"></div>
+                            <div id="tab-tratamiento" class="tab-content space-y-3"></div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </section>
+
+    </div>
+
+    <script type="module">
+        const pathologyData = {
+            empiema: {
+                nombre: "Empiema Pleural",
+                image: ["https://github.com/diegoopazocom-hash/imajenes-cjaval/blob/main/empi.jpg?raw=true", "https://image.slidesharecdn.com/empiemapulmonar-150608061832-lva1-app6891/75/Empiema-Pulmonar-3-2048.jpg"],
+                clinica: [
+                    "<strong>Síntomas Generales:</strong> Fiebre, calofríos, malestar general, baja de peso (si es crónico).",
+                    "<strong>Síntomas Locales:</strong> <strong>Dolor torácico pleurítico</strong> (aumenta con la inspiración), tos (generalmente productiva), disnea.",
+                    "<strong>Signos Físicos:</strong> Disminución o abolición del murmullo vesicular, <strong>matidez</strong> a la percusión en la zona del derrame.",
+                    "<strong>*️⃣ Caso Clínico Tipo:</strong> Paciente de 68 años con antecedente de Neumonía que fue tratada ambulatoriamente hace 10 días, pero persiste con fiebre, malestar general, y dolor costal. Al examen físico se encuentra matidez y abolición del murmullo vesicular en base derecha. "
+                ],
+                ddx: [
+                    "Neumonía Bacteriana sin Derrame.",
+                    "Absceso Pulmonar (frecuentemente asociado a necrosis).",
+                    "Derrame paraneumónico no complicado (pH > 7.20).",
+                    "Tuberculosis Pleural (cuadro más subagudo/crónico)."
+                ],
+                anamnesis: [
+                    "<span class='subheading'>Anamnesis Próxima (Evolución):</span>",
+                    "Indagar sobre el <strong>tiempo de evolución del cuadro febril</strong>, tos y dolor pleurítico (generalmente días o semanas, no agudo como NAC simple).",
+                    "Preguntar por el manejo de la patología inicial (ej. ¿cómo se trató la neumonía previa?).",
+                    "<span class='subheading'>Factores de Riesgo (FR):</span>",
+                    "<strong>Infección Previa:</strong> Neumonía bacteriana (causa más común), cirugía torácica o trauma.",
+                    "<strong>Deterioro Inmunológico:</strong> Inmunosupresión (VIH, DM, uso de corticoides, enfermedades autoinmunes).",
+                    "<strong>Riesgo de Aspiración:</strong> Alcoholismo, mala higiene dental (FR para anaerobios)."
+                ],
+                diagnostico: [
+                    "<span class='subheading'>1. Diagnóstico por Imágenes:</span>",
+                    "<strong>Rx Tórax (PA y Lateral):</strong> Opacidad con menisco (derrame). Signo de loculaciones o engrosamiento pleural.",
+                    "<strong>Ecografía Pleural:</strong> Fundamental para detección de septos, loculaciones y para guiar la toracocentesis con seguridad.",
+                    "<strong>TAC de Tórax:</strong> Confirma loculaciones, colecciones y evalúa el parénquima pulmonar subyacente.",
+                    "<span class='subheading'>2. Estudio de Líquido Pleural (Clave):</span>",
+                    "<strong>Aspecto:</strong> Purulento (diagnóstico inmediato de empiema).",
+                    "<strong>Criterios de Light:</strong> Exudado (siempre).",
+                    "<strong>Químico:</strong> pH < 7.20, Glucosa < 60 mg/dL, LDH > LSN sérico, Proteínas > 3 g/dL.",
+                    "<strong>Microbiología:</strong> Gram y Cultivo (identificación de la bacteria causante, esencial para ATB).",
+                    "<span class='subheading'>🚨 Triage y Hospitalización:</span>",
+                    "<strong>Indicación Absoluta:</strong> Todo empiema requiere hospitalización e ingreso de tubo de drenaje."
+                ],
+                tratamiento: [
+                    "<span class='subheading'>1. Antibióticos Sistémicos (Empírico inicial):</span>",
+                    "Cobertura para Neumococo (si post-NAC) y Anaerobios. Ej: <strong>Ceftriaxona + Clindamicina</strong> (o Metronidazol).",
+                    "Ajustar a <strong>terapia dirigida</strong> una vez obtenido el cultivo y antibiograma.",
+                    "Duración total: <strong>3 a 6 semanas</strong>.",
+                    "<span class='subheading'>2. Drenaje de la Colección (Pilar):</span>",
+                    "<strong>Tubo Pleural (Drenaje Torácico):</strong> Requerido para evacuar el pus.",
+                    "<strong>Fibrinolíticos Intrapleurales (Uroquinasa/Alteplasa):</strong> Se usan en empiemas loculados o multiseptados para romper las adherencias y mejorar el drenaje.",
+                    "<span class='subheading'>3. Decorticación Quirúrgica:</span>",
+                    "Indicada si el drenaje y la terapia fibrinolítica fallan o si el empiema es crónico/organizado (VATS o toracotomía).",
+                    "<span class='subheading'>✅ Prevención y Seguimiento:</span>",
+                    "<strong>Seguimiento:</strong> Controles radiológicos y ecográficos seriados para verificar la reexpansión pulmonar y la adecuada remoción del pus.",
+                    "<strong>Prevención:</strong> Adecuado y precoz tratamiento de la Neumonía (principal FR)."
+                ]
+            },
+            bronquitis: {
+                nombre: "Bronquitis Aguda",
+                image: ["https://github.com/diegoopazocom-hash/imajenes-cjaval/blob/main/bro.jpg?raw=true", "https://medlineplus.gov/spanish/ency/images/ency/fullsize/17099.jpg"],
+                clinica: [
+                    "<strong>Síntomas Cardinales:</strong> <strong>Tos</strong> (puede ser seca o productiva con esputo claro, amarillo o verde). La tos es el síntoma predominante.",
+                    "<strong>Síntomas Asociados:</strong> Síntomas catarrales (rinorrea, odinofagia), malestar general, afebril o febrícula.",
+                    "<strong>Duración:</strong> Autolimitada, típicamente la tos persiste por <strong>menos de 3 semanas</strong>.",
+                    "<strong>Examen Físico:</strong> Roncus o sibilancias dispersas que <strong>pueden cambiar con la tos</strong>. Ausencia de signos de consolidación pulmonar.",
+                    "<strong>*️⃣ Caso Clínico Tipo:</strong> Joven de 25 años, sano, que hace 5 días inició un cuadro de rinorrea y odinofagia, seguido de tos que ha ido aumentando en intensidad. La tos es ocasionalmente productiva con esputo hialino. Se mantiene afebril. Auscultación con sibilancias dispersas que se resuelven con la tos."
+                ],
+                ddx: [
+                    "Neumonía (excluir por examen físico y FR).",
+                    "Asma (si la tos es recurrente, no cede, y hay sibilancias persistentes).",
+                    "Rinitis/Sinusitis aguda (si rinorrea y dolor facial persisten).",
+                    "Tosferina (si la tos es paroxística y prolongada)."
+                ],
+                anamnesis: [
+                    "<span class='subheading'>Anamnesis Próxima (Evolución):</span>",
+                    "Inicio agudo de tos <strong>post-cuadro viral</strong> (días después de un resfrío).",
+                    "Evaluar la <strong>duración de la tos</strong> (clave para diferenciar de tos crónica).",
+                    "<span class='subheading'>Factores de Riesgo (FR):</span>",
+                    "<strong>Etiología:</strong> <strong>>90% Viral</strong> (Influenza, Parainfluenza, Adenovirus, VRS).",
+                    "<strong>Exposición:</strong> Tabaquismo (activo o pasivo), exposición a contaminantes ambientales/laborales."
+                ],
+                diagnostico: [
+                    "<span class='subheading'>Clínico (Exclusión de Neumonía):</span>",
+                    "El diagnóstico es netamente clínico, basado en la historia de tos subaguda post-infección viral y la ausencia de signos de consolidación pulmonar.",
+                    "<strong>Rx Tórax:</strong> No se recomienda de rutina. Solo está indicada si existen signos de alarma o alta sospecha de Neumonía, tales como: fiebre alta (>38.5°C), taquicardia (>100 lpm), taquipnea (>24 rpm) o hallazgos focales (crépitos, matidez) en la auscultación.",
+                    "<span class='subheading'>🚨 Triage y Hospitalización:</span>",
+                    "<strong>Manejo Ambulatorio:</strong> Regla general.",
+                    "<strong>Banderas Rojas:</strong> Fiebre persistente (>3 días), disnea progresiva, hemoptisis, signos de Neumonía (escalar a protocolo NAC)."
+                ],
+                tratamiento: [
+                    "<span class='subheading'>Manejo Sintomático (Autolimitado):</span>",
+                    "Medidas generales: <strong>Hidratación</strong> y reposo relativo.",
+                    "Fiebre/Dolor: Uso de <strong>AINEs (Paracetamol, Ibuprofeno)</strong>.",
+                    "Tos molesta: Se pueden usar antitusígenos (ej. Codeína), pero el beneficio es limitado y deben usarse con precaución.",
+                    "<strong>🚫 Antibióticos:</strong> <strong>Estrictamente contraindicados</strong> en la mayoría de los casos. Su uso es ineficaz y promueve la resistencia antimicrobiana. Solo se considerarían si se aísla *Bordetella pertussis* (tos ferina) o en pacientes inmunocomprometidos.",
+                    "<span class='subheading'>✅ Prevención y Seguimiento:</span>",
+                    "<strong>Prevención:</strong> Higiene de manos. Vacunación Antigripal (reduce incidencia).",
+                    "<strong>Seguimiento:</strong> Control sintomático. Si la tos persiste >3 semanas o empeora, reevaluar para DDx como TBC o asma."
+                ]
+            },
+            covid19: {
+                nombre: "COVID-19 (SARS-CoV-2)",
+                image: ["https://github.com/diegoopazocom-hash/imajenes-cjaval/blob/main/covi.jpg?raw=true", "https://akamai.sscdn.co/letras/360x360/albuns/9/5/d/c/2075641704214054.jpg"],
+                clinica: [
+                    "<strong>Síntomas de Alta Sospecha:</strong> <strong>Anosmia y/o Ageusia</strong> (muy específicos y comunes).",
+                    "<strong>Clínica Típica:</strong> Fiebre, tos seca, mialgias, cefalea, odinofagia, fatiga.",
+                    "<strong>Clínica Grave:</strong> Disnea, opresión torácica, taquipnea, <strong>Hipoxemia silenciosa</strong> (desaturación sin disnea aparente).",
+                    "<strong>*️⃣ Caso Clínico Tipo:</strong> Paciente de 55 años, con antecedente de Diabetes Mellitus tipo 2 e Hipertensión Arterial, que consulta por 4 días de evolución con fiebre, mialgias intensas, tos seca y sensación de disnea leve al subir escaleras. Refiere haber perdido totalmente el sentido del olfato ayer."
+                ],
+                ddx: [
+                    "Gripe/Influenza (comienzo más brusco, ausencia de anosmia/ageusia).",
+                    "Neumonía Bacteriana (si consolidación focal o clínica atípica).",
+                    "Bronquitis Aguda (si síntomas respiratorios leves sin disnea ni fiebre)."
+                ],
+                anamnesis: [
+                    "<span class='subheading'>Anamnesis Próxima (Evolución y Contacto):</span>",
+                    "Indagar sobre la <strong>exposición o contacto</strong> con caso confirmado en los últimos 14 días.",
+                    "Evaluar la progresión de la disnea y la saturación de oxígeno (o uso de oxímetro en casa).",
+                    "<span class='subheading'>Factores de Riesgo (FR) para Enfermedad Grave:</span>",
+                    "<strong>Edad:</strong> > 60 años.",
+                    "<strong>Comorbilidades Crónicas:</strong> HTA, DM, Obesidad, EPOC, Cáncer, Inmunosupresión.",
+                    "<strong>Estado de Vacunación:</strong> No vacunado o esquema incompleto."
+                ],
+                diagnostico: [
+                    "<span class='subheading'>1. Confirmación Virológica:</span>",
+                    "<strong>RT-PCR:</strong> <strong>Gold standard</strong>. Detecta ARN viral. Alta sensibilidad.",
+                    "<strong>Test de Antígeno (TDAg):</strong> Más rápido y económico. Útil para diagnóstico en fase aguda (primeros 5-7 días con síntomas).",
+                    "<span class='subheading'>2. Imágenes (en enfermedad moderada/severa):</span>",
+                    "<strong>Rx Tórax:</strong> Infiltrados bilaterales, con patrón en vidrio esmerilado o consolidación. Poco sensible en etapas tempranas.",
+                    "<strong>TAC de Tórax:</strong> Hallazgos típicos: Opacidades en vidrio esmerilado, bilaterales, de predominio periférico y basal.",
+                    "<span class='subheading'>🚨 Triage y Hospitalización:</span>",
+                    "<strong>Hospitalizar si:</strong> <strong>SatO2 < 94%</strong> al aire ambiente, taquipnea (>30 rpm), compromiso de conciencia, inestabilidad hemodinámica.",
+                    "<strong>Considerar UCI si:</strong> Necesidad de VMNI, shock, requerimiento de VMI."
+                ],
+                tratamiento: [
+                    "<span class='subheading'>1. Manejo Ambulatorio (Leve, sin FR):</span>",
+                    "Aislamiento. Hidratación. Manejo sintomático (Paracetamol).",
+                    "<span class='subheading'>2. Manejo Hospitalario (Moderado/Grave - SatO2 < 94%):</span>",
+                    "<strong>Oxigenoterapia:</strong> Mantener SatO2 > 94% (Cánula, VMNI, Alto Flujo).",
+                    "<strong>Corticoides:</strong> <strong>Dexametasona</strong> (6 mg/día por 10 días). Indicados solo en pacientes que requieren O2 suplementario.",
+                    "<strong>Antivirales (según MINSAL):</strong> <strong>Paxlovid</strong> o <strong>Remdesivir</strong>. Indicados en pacientes de alto riesgo (FR) en los primeros 5 días de síntomas.",
+                    "<strong>Tromboprofilaxis:</strong> Heparina de bajo peso molecular.",
+                    "<span class='subheading'>✅ Prevención y Seguimiento:</span>",
+                    "<strong>Prevención:</strong> Vacunación (mantener esquema actualizado). Medidas de higiene respiratoria.",
+                    "<strong>Seguimiento:</strong> Evaluar secuelas post-COVID (fatiga, disnea crónica, secuelas pulmonares fibrosantes)."
+                ]
+            },
+            neumonia: {
+                nombre: "Neumonía Adquirida en la Comunidad (NAC)",
+                image: ["https://github.com/diegoopazocom-hash/imajenes-cjaval/blob/main/nac.jpg?raw=true", "https://www.mayoclinic.org/-/media/kcms/gbs/patient-consumer/images/2013/08/26/10/01/ds00135_im00621_pnuesmal_gif.png"],
+                clinica: [
+                    "<strong>Síntomas Cardinales:</strong> <strong>Inicio agudo</strong> de fiebre alta y calofríos. Tos productiva (esputo purulento, a veces hemoptoico/herrumbroso).",
+                    "<strong>Síntomas Locales:</strong> Dolor torácico pleurítico, disnea, taquipnea.",
+                    "<strong>Signos Focales:</strong> Crépitos, soplo tubario, matidez a la percusión (signos de consolidación).",
+                    "<strong>*️⃣ Caso Clínico Tipo:</strong> Hombre de 75 años, tabaquista pesado (IPA 40), que consulta por inicio brusco hace 2 días de fiebre de 39°C con calofríos, tos productiva con esputo herrumbroso y dolor puntada de lado derecho. Al examen físico se encuentra taquipnea (FR 26), taquicardia (FC 110), y crépitos en base derecha."
+                ],
+                ddx: [
+                    "Bronquitis Aguda (si no hay infiltrado en Rx, ni signos de consolidación).",
+                    "Insuficiencia Cardíaca Aguda (edema pulmonar, clínica bilateral, sin fiebre).",
+                    "TEP (disnea súbita, hipoxemia, sin infiltrado típico).",
+                    "Exacerbación de EPOC (clínica obstructiva previa)."
+                ],
+                anamnesis: [
+                    "<span class='subheading'>Anamnesis Próxima (Evolución):</span>",
+                    "Evaluar la <strong>rapidez de inicio</strong> (típico: 1-3 días de fiebre y calofríos).",
+                    "Características del esputo (purulento, herrumbroso).",
+                    "<span class='subheading'>Factores de Riesgo (FR):</span>",
+                    "<strong>Edad:</strong> > 65 años.",
+                    "<strong>Comorbilidades:</strong> Tabaquismo, EPOC, DM, VIH, uso de corticoides.",
+                    "<strong>Riesgo de Agente Específico:</strong> Alcoholismo (FR para *K. pneumoniae* y anaerobios). Ausencia de vacunación."
+                ],
+                diagnostico: [
+                    "<span class='subheading'>1. Diagnóstico Clínico-Radiológico:</span>",
+                    "Sospecha clínica de infección respiratoria baja <strong>MÁS</strong> infiltrado nuevo en la <strong>Rx Tórax</strong> (PA y Lateral). La Rx es el gold standard de imagen.",
+                    "<span class='subheading'>2. Evaluación de Gravedad (Triage):</span>",
+                    "Uso de Scores (MINSAL): <strong>CURB-65</strong> o PSI (Pneumonia Severity Index).",
+                    "El score <strong>define el lugar de manejo</strong> (ambulatorio, sala común o UPC).",
+                    "<strong>Criterios de Hospitalización (CURB-65 ≥ 2):</strong>",
+                    "<strong>C:</strong> Confusión o desorientación.",
+                    "<strong>U:</strong> Urea > 7 mmol/L.",
+                    "<strong>R:</strong> Frecuencia Respiratoria ≥ 30 rpm.",
+                    "<strong>B:</strong> Presión Arterial (PAS < 90 o PAD ≤ 60 mmHg).",
+                    "<strong>65:</strong> Edad ≥ 65 años.",
+                    "<span class='subheading'>3. Estudio Etiológico:</span>",
+                    "Solo en pacientes graves (CURB 3+ o UCI). Incluye: <strong>Hemocultivos</strong>, <strong>antígeno urinario</strong> para *S. pneumoniae* y *Legionella*."
+                ],
+                tratamiento: [
+                    "<span class='subheading'>Terapia Antibiótica Empírica (7 días):</span>",
+                    "<span class='subheading'>Manejo Ambulatorio (CURB 0-1):</span>",
+                    "Fármaco de elección (MINSAL): <strong>Amoxicilina 1g c/8h</strong>.",
+                    "Alternativa (alergia o sospecha de atípico): Macrólido (Claritromicina o Azitromicina).",
+                    "<span class='subheading'>Manejo Hospitalario (CURB 2+):</span>",
+                    "Doble terapia: <strong>Beta-Lactámico EV + Macrólido EV</strong>. Ej: <strong>Ceftriaxona + Claritromicina</strong>.",
+                    "<strong>Medidas de Soporte:</strong>",
+                    "Oxigenoterapia si SatO2 < 92%. Fluidos EV.",
+                    "<span class='subheading'>✅ Prevención y Seguimiento:</span>",
+                    "<strong>Vacunación:</strong> <strong>Vacuna Antineumocócica</strong> (en mayores de 65 años y FR crónicos) e <strong>Influenza</strong> anual.",
+                    "<strong>Seguimiento:</strong> Control clínico a 48-72h. Rx Tórax de control a las 4-6 semanas en pacientes con FR (ej. tabaquistas) para descartar cáncer subyacente."
+                ]
+            },
+            asma: {
+                nombre: "Asma",
+                image: ["https://github.com/diegoopazocom-hash/imajenes-cjaval/blob/main/asma.jpg?raw=true", "https://quenotefalteaire.wordpress.com/wp-content/uploads/2017/08/asma-bronquios.png"],
+                clinica: [
+                    "<strong>Síntomas Cardinales:</strong> Episodios recurrentes de <strong>sibilancias</strong>, disnea, opresión torácica y tos (generalmente seca).",
+                    "<strong>Patrón:</strong> Síntomas <strong>variables</strong> en tiempo e intensidad. Típico <strong>empeoramiento nocturno</strong> o en la madrugada.",
+                    "<strong>Desencadenantes:</strong> Síntomas provocados por ejercicio, alérgenos, infecciones virales o aire frío.",
+                    "<strong>Examen Físico:</strong> Sibilancias espiratorias difusas. En crisis grave: taquipnea, uso de musculatura accesoria, o <strong>silencio pulmonar</strong> (obstrucción crítica).",
+                    "<strong>*️⃣ Caso Clínico Tipo:</strong> Adolescente de 16 años con antecedente de rinitis alérgica desde la infancia. Consulta por episodios recurrentes, principalmente nocturnos y tras hacer educación física, de sibilancias audibles a distancia, tos y disnea que ceden al usar su inhalador de rescate (Salbutamol)."
+                ],
+                ddx: [
+                    "EPOC (si es adulto > 40 años, fumador, y obstrucción no reversible).",
+                    "Insuficiencia Cardíaca (si disnea y sibilancias bilaterales/basales en ancianos).",
+                    "Disfunción de Cuerdas Vocales (si sibilancia inspiratoria predominante).",
+                    "Bronquitis aguda (si síntomas solo asociados a infección viral)."
+                ],
+                anamnesis: [
+                    "<span class='subheading'>Anamnesis Próxima (Patrón de Síntomas):</span>",
+                    "Identificar la <strong>recurrencia</strong> y <strong>variabilidad</strong> de los síntomas. Evaluar la <strong>respuesta al tratamiento de rescate</strong> (Salbutamol).",
+                    "Identificar <strong>desencadenantes</strong>: (polvo, polen, mascotas, ejercicio).",
+                    "<span class='subheading'>Factores de Riesgo (FR):</span>",
+                    "<strong>Atopia:</strong> Historia personal o familiar de rinitis alérgica o dermatitis atópica (Atopia).",
+                    "<strong>Exposición:</strong> Tabaquismo pasivo en la infancia.",
+                    "<strong>Historia Familiar:</strong> Asma en padres o hermanos."
+                ],
+                diagnostico: [
+                    "<span class='subheading'>Prueba Funcional Pulmonar (Pilar):</span>",
+                    "<strong>Espirometría:</strong> Demostrar obstrucción bronquial (VEF1/CVF reducido < 0.7 o Límite Inferior Normal).",
+                    "<strong>Prueba Broncodilatadora (PBD):</strong> Es positiva si hay reversibilidad: Aumento del VEF1 <strong>> 12% y > 200 mL</strong> tras la administración de Salbutamol. <strong>Esto confirma Asma.</strong>",
+                    "<strong>Alternativas (si espirometría normal):</strong> Prueba de provocación bronquial (Metacolina) o test de variabilidad del Flujo Espiratorio Máximo (PEF) diario.",
+                    "<span class='subheading'>🚨 Triage y Hospitalización (Crisis Asmática):</span>",
+                    "<strong>Banderas Rojas:</strong> Disnea grave que impide hablar. Cianosis. Confusión/somnolencia. PEF < 50% del valor personal o teórico. Ausencia de sibilancias (silencio pulmonar) – ¡Indica obstrucción grave!"
+                ],
+                tratamiento: [
+                    "<span class='subheading'>Objetivo de Control:</span> Controlar síntomas y prevenir exacerbaciones (GINA/MINSAL).",
+                    "<span class='subheading'>Terapia de Control (Enfoque Escalonado):</span>",
+                    "<strong>Paso 1-5:</strong> Se basa en la combinación de Corticoides Inhalados (ICS) + Broncodilatadores de Acción Larga (LABA) o Corta (SABA). El manejo moderno prioriza el uso de ICS.",
+                    "<span class='subheading'>Manejo de Crisis Aguda (Esquema de Rescate):</span>",
+                    "<strong>1. Broncodilatadores:</strong> Salbutamol (SABA) en dosis repetidas (inhalador o nebulización).",
+                    "<strong>2. Antiinflamatorios:</strong> Corticoides sistémicos (Prednisona/Hidrocortisona) en crisis moderadas a severas.",
+                    "<span class='subheading'>✅ Prevención y Seguimiento:</span>",
+                    "<strong>Prevención:</strong> Identificación y evitación de alérgenos/triggers. Cese tabáquico (activo y pasivo).",
+                    "<strong>Seguimiento:</strong> Control de síntomas, adherencia al ICS de control, y re-evaluación periódica de la función pulmonar (espirometría)."
+                ]
+            },
+            absceso: {
+                nombre: "Absceso Pulmonar",
+                image: ["https://github.com/diegoopazocom-hash/imajenes-cjaval/blob/main/abs.jpg?raw=true", "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Lung_abscess_%287468374820%29.jpg/1200px-Lung_abscess_%287468374820%29.jpg"],
+                clinica: [
+                    "<strong>Patrón:</strong> Cuadro <strong>subagudo</strong> (semanas de evolución).",
+                    "<strong>Síntomas Sistémicos:</strong> Fiebre, baja de peso, sudoración nocturna.",
+                    "<strong>Síntomas Respiratorios:</strong> Tos productiva con <strong>esputo abundante, purulento y fétido (olor pútrido)</strong>. Hemoptisis ocasional.",
+                    "<strong>*️⃣ Caso Clínico Tipo:</strong> Hombre de 50 años, indigente y alcohólico crónico, con mal estado dental y gingivitis. Consulta tras 3 semanas de baja de peso, fiebre vespertina y tos que se ha vuelto productiva con gran cantidad de esputo purulento y de olor muy desagradable."
+                ],
+                ddx: [
+                    "Cáncer Pulmonar cavitado (especialmente Carcinoma Escamoso, si no hay FR de aspiración).",
+                    "Tuberculosis Pulmonar (TBC) cavitada (cuadro consuntivo similar).",
+                    "Empiema Pleural (si la cavidad está en la pleura y no en el parénquima).",
+                    "Granulomatosis de Wegener (clínica sistémica y cavitaciones múltiples)."
+                ],
+                anamnesis: [
+                    "<span class='subheading'>Anamnesis Próxima (Evolución):</span>",
+                    "Preguntar por la duración (típicamente <strong>más de 2 semanas</strong>). Evaluar la cantidad y el <strong>olor del esputo</strong>.",
+                    "<span class='subheading'>Factores de Riesgo (FR) para Aspiración:</span>",
+                    "<strong>Deterioro de Reflejos:</strong> Alcoholismo crónico, epilepsia, enfermedad neurológica (ACV, demencia, sedación).",
+                    "<strong>Fuente Bacteriana:</strong> <strong>Mala higiene dental</strong>, gingivitis, periodontitis (principal fuente de anaerobios)."
+                ],
+                diagnostico: [
+                    "<span class='subheading'>Confirmación por Imágenes:</span>",
+                    "<strong>Rx Tórax:</strong> Se observa una <strong>cavitación</strong> (halo radiolúcido) dentro de una consolidación, frecuentemente con un <strong>nivel hidroaéreo</strong> (interfase aire-líquido). Ubicación clásica en segmentos posteriores de lóbulos superiores o superiores de lóbulos inferiores (zonas de decúbito en aspiración).",
+                    "<strong>TAC de Tórax:</strong> Más sensible para confirmar la cavidad, delimitar el nivel hidroaéreo y diferenciarlo de otras lesiones cavitadas (ej. cáncer, TBC).",
+                    "<span class='subheading'>Estudio Etiológico:</span>",
+                    "Cultivo de esputo (limitado por contaminación oral). Se prefiere el cultivo de aspirado transtraqueal o de broncoscopía si es posible.",
+                    "<span class='subheading'>🚨 Triage y Hospitalización:</span>",
+                    "<strong>Hospitalizar si:</strong> Alto riesgo de ruptura (cavitación > 6 cm), enfermedad grave/séptica, hemoptisis significativa, o compromiso de la función respiratoria."
+                ],
+                tratamiento: [
+                    "<span class='subheading'>Pilar: Antibióticos Prolongados (Anaerobios):</span>",
+                    "<strong>Fármaco de elección clásico:</strong> <strong>Clindamicina</strong>, por su excelente cobertura de anaerobios (microorganismos de la boca).",
+                    "<strong>Alternativas:</strong> Amoxicilina/Ácido Clavulánico.",
+                    "<strong>Duración:</strong> El tratamiento debe ser largo, típicamente <strong>4 a 6 semanas</strong>, o hasta que la cavitación radiológica se resuelva completamente o se estabilice.",
+                    "<span class='subheading'>Drenaje:</span>",
+                    "El tratamiento inicial es médico. El drenaje postural y la Kinesioterapia respiratoria ayudan.",
+                    "Si no hay mejoría o es un absceso muy grande (>6 cm), se considera el drenaje percutáneo o la broncoscopía.",
+                    "<span class='subheading'>✅ Prevención y Seguimiento:</span>",
+                    "<strong>Prevención:</strong> Mejorar la higiene dental y tratar el alcoholismo (factor de riesgo principal). Evaluación y manejo de la disfagia.",
+                    "<strong>Seguimiento:</strong> Controles radiológicos seriados (Rx/TAC) hasta la resolución o estabilización completa de la cavidad."
+                ]
+            },
+            cancer: {
+                nombre: "Cáncer Pulmonar",
+                image: ["https://github.com/diegoopazocom-hash/imajenes-cjaval/blob/main/ca.jpg?raw=true", "https://www.cancer.gov/sites/g/files/xnrzdm211/files/styles/cgov_article/public/cgov_image/media_image/900/100/files/adenocarcinoma-ct-scan-article.jpg?h=b48714fe&itok=Ve9FpK2l"],
+                clinica: [
+                    "<strong>Presentación Inicial:</strong> Frecuentemente <strong>asintomático</strong> en etapas iniciales (hallazgo incidental).",
+                    "<strong>Síntomas Persistentes:</strong> <strong>Tos</strong> (la más común, que cambia de patrón), disnea, dolor torácico (si hay invasión pleural/ósea).",
+                    "<strong>Síntomas de Alarma (Banderas Rojas):</strong> Hemoptisis, baja de peso inexplicable, disfonía (compromiso n. laríngeo recurrente).",
+                    "<strong>Síndromes Paraneoplásicos:</strong> Ej. Síndrome de Vena Cava Superior, Síndrome de Pancoast, Síndrome de Cushing, SIADH.",
+                    "<strong>*️⃣ Caso Clínico Tipo:</strong> Paciente hombre de 65 años, fumador activo de 30 paquetes/año, que consulta por tos seca que ha cambiado de patrón en los últimos 2 meses, volviéndose persistente. Además, refiere baja de peso de 5 kg en el último mes y aparición de expectoración con estrías de sangre."
+                ],
+                ddx: [
+                    "Tuberculosis Pulmonar (si tos y síntomas consuntivos).",
+                    "Neumonía que no resuelve (si persiste infiltrado y fiebre a pesar de ATB).",
+                    "Absceso Pulmonar (si cavitación).",
+                    "Tos por inhibidores ECA (si tos crónica sin otros síntomas)."
+                ],
+                anamnesis: [
+                    "<span class='subheading'>Anamnesis Próxima (Cambios Crónicos):</span>",
+                    "Enfocarse en la <strong>tos que cambia de carácter o no mejora > 3 semanas</strong>.",
+                    "Síntomas consuntivos (baja de peso, fatiga) y signos de diseminación (dolor óseo).",
+                    "<span class='subheading'>Factores de Riesgo (FR):</span>",
+                    "<strong>Tabaquismo:</strong> Factor de riesgo <strong>MÁS IMPORTANTE</strong> (<strong>>85%</strong> casos). Calcular IPA (Índice Paquetes/Año).",
+                    "<strong>Exposición Ambiental:</strong> Asbesto (mesotelioma y cáncer), Radón.",
+                    "<strong>Otros:</strong> Historia familiar de cáncer pulmonar, EPOC."
+                ],
+                diagnostico: [
+                    "<span class='subheading'>1. Sospecha por Imagen:</span>",
+                    "<strong>Rx Tórax:</strong> Nódulo pulmonar solitario (NPS) o masa.",
+                    "<strong>TAC de Tórax (con contraste):</strong> Necesaria para caracterizar el NPS (calcificaciones, bordes) y realizar la etapificación T, N y M.",
+                    "<span class='subheading'>2. Confirmación Histológica (Pilar):</span>",
+                    "Se requiere <strong>biopsia</strong> para confirmar el diagnóstico y definir el tipo (Células Pequeñas vs. No Pequeñas). La toma de muestra puede ser por fibrobroncoscopía (si es central) o por Punción Transtorácica guiada por TAC (si es periférico).",
+                    "<span class='subheading'>3. Etapificación (Estudio de Diseminación):</span>",
+                    "PET-CT y/o RM cerebral para buscar metástasis a distancia (etapa M).",
+                    "<span class='subheading'>🚨 Triage y Hospitalización:</span>",
+                    "<strong>Urgencia Oncológica:</strong> Síndrome de Vena Cava Superior, compresión medular o hemoptisis masiva."
+                ],
+                tratamiento: [
+                    "<span class='subheading'>Decisión Multidisciplinaria (Comité Oncológico):</span>",
+                    "<strong>Enfermedad Localizada (Etapas I y II):</strong> La <strong>Cirugía (Lobectomía)</strong> es la opción con intento curativo.",
+                    "<strong>Enfermedad Locorregional (Etapa III):</strong> Se utiliza terapia combinada: <strong>Quimioterapia + Radioterapia</strong>.",
+                    "<strong>Enfermedad Avanzada (Etapa IV):</strong>",
+                    "<strong>Terapia Dirigida:</strong> Si se encuentran mutaciones genéticas específicas (ej. EGFR, ALK).",
+                    "<strong>Inmunoterapia:</strong> (Ej. Inhibidores de PD-1/PD-L1).",
+                    "<strong>Cuidados Paliativos:</strong> Manejo de síntomas y calidad de vida.",
+                    "<span class='subheading'>✅ Prevención y Seguimiento:</span>",
+                    "<strong>Prevención Primaria:</strong> <strong>Cese Tabáquico es la medida más efectiva.</strong>",
+                    "<strong>Screening (Detección Precoz):</strong> TAC de baja dosis anual en fumadores pesados de alto riesgo (Guías internacionales, aún no MINSAL).",
+                    "<strong>Seguimiento:</strong> Estricto control oncológico según el esquema de tratamiento."
+                ]
+            },
+            tbc: {
+                nombre: "Tuberculosis (TBC) Pulmonar",
+                image: ["https://github.com/diegoopazocom-hash/imajenes-cjaval/blob/main/tbc.jpg?raw=true", "https://ssl.adam.com/graphics/images/es/17260.jpg"],
+                clinica: [
+                    "<strong>Patrón:</strong> Enfermedad <strong>subaguda/crónica</strong> (> 2 semanas de evolución).",
+                    "<strong>Síntomas Sistémicos (Consuntivos):</strong> Baja de peso, <strong>fiebre vespertina</strong>, <strong>sudoración nocturna</strong> (signos clave), adinamia, hiporexia.",
+                    "<strong>Síntomas Respiratorios:</strong> Tos crónica (> 2 semanas), productiva, expectoración hemoptoica.",
+                    "<strong>*️⃣ Caso Clínico Tipo:</strong> Joven de 20 años, extranjero, sin antecedentes de vacunación, que ha convivido en residencia con hacinamiento. Refiere un cuadro de 1 mes de evolución de tos con expectoración, que se asocia a baja de peso, gran fatiga y fiebre que aparece principalmente al atardecer, acompañada de sudoración profusa nocturna."
+                ],
+                ddx: [
+                    "Cáncer Pulmonar (síntomas consuntivos, baja de peso, tos crónica).",
+                    "Micosis Pulmonares (cuadro subagudo similar, especialmente en inmunodeprimidos).",
+                    "VIH (inmunodepresión asociada, fiebre, baja de peso).",
+                    "Absceso Pulmonar (si hay cavitación)."
+                ],
+                anamnesis: [
+                    "<span class='subheading'>Anamnesis Próxima (Evolución):</span>",
+                    "Enfatizar la duración prolongada del cuadro (<strong>más de 1 mes</strong>). Preguntar por el patrón de la fiebre y la presencia de síntomas consuntivos.",
+                    "<span class='subheading'>Factores de Riesgo (FR):</span>",
+                    "<strong>Exposición y Social:</strong> Contacto con paciente TBC, hacinamiento, privación de libertad, viajes/migración.",
+                    "<strong>Inmunosupresión:</strong> <strong>VIH</strong>, Diabetes Mellitus, uso de corticoides o terapia biológica (anti-TNF).",
+                    "<strong>Ocupacional/Ambiental:</strong> Silicosis (alto riesgo en Chile - minería)."
+                ],
+                diagnostico: [
+                    "<span class='subheading'>1. Confirmación Bacteriológica (Pilar MINSAL):</span>",
+                    "<strong>Baciloscopía (BK) seriada:</strong> Búsqueda de Bacilos Ácido Alcohol Resistentes (BAAR) en 2-3 muestras de esputo. Rápido y barato.",
+                    "<strong>Cultivo:</strong> <strong>Gold standard</strong>. Mayor sensibilidad y permite realizar antibiograma. Demora semanas.",
+                    "<strong>GeneXpert:</strong> Prueba molecular rápida que detecta *M. tuberculosis* y resistencia a Rifampicina en horas.",
+                    "<span class='subheading'>2. Imágenes:</span>",
+                    "<strong>Rx Tórax:</strong> TBC Primaria (adenopatías, derrame). TBC Post-primaria (reactivación): Infiltrados/cavitaciones en <strong>vértices y lóbulos superiores</strong>.",
+                    "<span class='subheading'>🚨 Triage y Hospitalización:</span>",
+                    "<strong>Hospitalizar si:</strong> TBC meníngea, diseminada (miliar), hemoptisis significativa, compromiso hemodinámico o respiratorio grave, o baja tolerancia/adherencia al tratamiento ambulatorio (social)."
+                ],
+                tratamiento: [
+                    "<span class='subheading'>Programa Nacional de TBC (Tratamiento DOT - Directamente Observado):</span>",
+                    "<strong>Fase Inicial (2 meses):</strong> Cuatro fármacos (HRZE): <strong>Isoniacida (H), Rifampicina (R), Pirazinamida (Z), Etambutol (E)</strong>.",
+                    "<strong>Fase de Continuación (4 meses):</strong> Dos fármacos (HR): <strong>Isoniacida (H), Rifampicina (R)</strong>.",
+                    "<strong>Duración Total:</strong> <strong>6 meses</strong> (para TBC pulmonar sensible).",
+                    "<strong>Efectos Adversos Clave:</strong> Hepatitis (H, R, Z), Neuropatía periférica (H), Hiperuricemia (Z), Neuritis óptica (E).",
+                    "<span class='subheading'>✅ Prevención y Seguimiento:</span>",
+                    "<strong>Prevención:</strong> <strong>Vacuna BCG</strong> (en Chile al nacer). <strong>Terapia preventiva (TPI)</strong> en contactos y coinfectados (VIH).",
+                    "<strong>Salud Pública (MINSAL):</strong> El tratamiento es gratuito y <strong>de administración diaria supervisada (DOT)</strong>. El seguimiento es con <strong>Baciloscopía mensual</strong> hasta la negativización (curación)."
+                ]
+            },
+            epoc: {
+                nombre: "Enfermedad Pulmonar Obstructiva Crónica (EPOC)",
+                image: ["https://github.com/diegoopazocom-hash/imajenes-cjaval/blob/main/epoc.jpg?raw=true", "https://www.synapticpg.com/images/fig4_epoc_fisiopato.jpg"],
+                clinica: [
+                    "<strong>Síntomas Cardinales:</strong> <strong>Disnea progresiva</strong>, persistente, empeora con el ejercicio. Tos y expectoración crónica.",
+                    "<strong>Patrón:</strong> Comienzo insidioso y progresión lenta a lo largo de los años. <strong>Exacerbaciones</strong> (aumento agudo de disnea, tos y volumen/purulencia de esputo).",
+                    "<strong>Examen Físico:</strong> Tórax en tonel (enfisema), uso de musculatura accesoria, sibilancias y espiración prolongada.",
+                    "<strong>*️⃣ Caso Clínico Tipo:</strong> Hombre de 70 años, tabaquista pesado por 40 años (IPA 60). Refiere que desde hace 5 años sufre de tos matutina con expectoración. Últimamente ha notado que caminar distancias cortas (1 cuadra) le provoca disnea, algo que antes no le pasaba. En invierno suele tener 1-2 episodios de 'bronquitis' que lo obligan a usar corticoides orales."
+                ],
+                ddx: [
+                    "Asma (si inicio en infancia, variabilidad marcada y obstrucción reversible).",
+                    "Insuficiencia Cardíaca (si predominan síntomas de congestión, disnea paroxística nocturna).",
+                    "Bronquiectasias (si gran cantidad de esputo purulento diario).",
+                    "Cáncer Pulmonar (si cambio reciente en patrón de tos)."
+                ],
+                anamnesis: [
+                    "<span class='subheading'>Anamnesis Próxima (Evolución):</span>",
+                    "Definir el <strong>grado de disnea</strong> (escala mMRC) y la <strong>frecuencia de exacerbaciones</strong> (número de eventos/año que requirieron corticoides o antibióticos).",
+                    "Evaluar la <strong>historia de tabaquismo</strong> (IPA y tiempo desde el cese).",
+                    "<span class='subheading'>Factores de Riesgo (FR):</span>",
+                    "<strong>Tabaco:</strong> <strong>Causa principal</strong> (<strong>>90%</strong>). Medir IPA (Índice Paquetes/Año).",
+                    "<strong>Exposición Ambiental:</strong> Humo de leña (biomasa), contaminantes ocupacionales.",
+                    "<strong>Genético:</strong> Déficit de Alfa-1 Antitripsina (FR raro, pero importante)."
+                ],
+                diagnostico: [
+                    "<span class='subheading'>1. Espirometría (Requisito Indispensable):</span>",
+                    "El diagnóstico se confirma por la presencia de obstrucción al flujo aéreo <strong>no completamente reversible</strong>.",
+                    "Criterio: <strong>VEF1/CVF post-broncodilatador < 0.70</strong>.",
+                    "La severidad se clasifica por el valor del VEF1 (GOLD 1 a 4).",
+                    "<span class='subheading'>2. Clasificación GOLD (ABCD):</span>",
+                    "Se clasifica al paciente según la frecuencia de exacerbaciones y la intensidad de los síntomas (mediante cuestionarios como CAT o mMRC) para guiar el tratamiento.",
+                    "<span class='subheading'>🚨 Triage y Hospitalización (Exacerbación Aguda):</span>",
+                    "<strong>Criterios:</strong> Disnea grave súbita, alteración del estado de conciencia, uso de musculatura accesoria, hipoxemia (SatO2 < 90%) o hipercapnia (paCO2 elevada)."
+                ],
+                tratamiento: [
+                    "<span class='subheading'>1. Medidas No Farmacológicas (Pilar Central):</span>",
+                    "<strong>Cese Tabáquico: ÚNICA medida que frena la progresión de la enfermedad.</strong>",
+                    "Rehabilitación Pulmonar.",
+                    "<span class='subheading'>2. Tratamiento Farmacológico (Broncodilatadores):</span>",
+                    "<strong>LAMA (Tiotropio), LABA (Salmeterol).</strong> La doble terapia (LAMA+LABA) es la elección en pacientes sintomáticos (Grupos B, C y D).",
+                    "<strong>ICS (Corticoides Inhalados):</strong> Se añaden solo en pacientes con exacerbaciones frecuentes (>2/año) y/o eosinofilia alta.",
+                    "<span class='subheading'>✅ Prevención y Seguimiento:</span>",
+                    "<strong>Prevención:</strong> <strong>Vacunación</strong> (Influenza anual y Neumococo). Cese tabáquico.",
+                    "<strong>Seguimiento:</strong> Control sintomático y de exacerbaciones. <strong>Espirometría</strong> anual para monitorizar la progresión (caída del VEF1)."
+                ]
+            },
+            tep: {
+                nombre: "Tromboembolismo Pulmonar (TEP)",
+                image: ["https://github.com/diegoopazocom-hash/imajenes-cjaval/blob/main/tep.jpg?raw=true", "https://institutoeuropeo.es/wp-content/uploads/2025/06/imagen-embolia-pulmonar.webp"],
+                clinica: [
+                    "<strong>Patrón:</strong> <strong>Inicio súbito y brusco</strong> de síntomas.",
+                    "<strong>Síntomas Cardinales:</strong> <strong>Disnea</strong> (más frecuente), dolor torácico (pleurítico), taquipnea, taquicardia.",
+                    "<strong>Clínica de Alto Riesgo:</strong> Síncope, <strong>Hipotensión o shock</strong> (indica TEP masivo y compromiso hemodinámico).",
+                    "<strong>Síntomas por Infarto:</strong> Hemoptisis (dolor pleurítico y tos con sangre).",
+                    "<strong>*️⃣ Caso Clínico Tipo:</strong> Mujer de 50 años, usuaria de anticonceptivos orales, que fue sometida a cirugía de rodilla hace 7 días. Mientras se encontraba en reposo en casa, presenta bruscamente disnea intensa, dolor en puntada de costado que aumenta con la inspiración y sensación de mareo. Al examen está taquicárdica (FC 120), taquipneica (FR 28) y SatO2 en 90% a FiO2 ambiente."
+                ],
+                ddx: [
+                    "Infarto Agudo al Miocardio (IAM) (disnea y dolor torácico subesternal).",
+                    "Neumotórax (dolor pleurítico súbito, asimetría de MV).",
+                    "Insuficiencia Cardíaca Aguda (disnea paroxística nocturna, ortopnea, sin FR de trombosis).",
+                    "Ansiedad/Crisis de Pánico (excluir siempre, si clínica no coincide con Scores de Wells)."
+                ],
+                anamnesis: [
+                    "<span class='subheading'>Anamnesis Próxima (Evolución):</span>",
+                    "Enfatizar el <strong>inicio brusco</strong> de la disnea y la presencia de dolor torácico pleurítico.",
+                    "<span class='subheading'>Factores de Riesgo (FR) - Tríada de Virchow:</span>",
+                    "<strong>Estasis:</strong> Cirugía o inmovilización reciente (viajes prolongados, yeso, hospitalización).",
+                    "<strong>Lesión Endotelial:</strong> Historia de TVP o TEP previo.",
+                    "<strong>Hipercoagulabilidad:</strong> Cáncer activo, uso de ACO (Anticonceptivos Orales), Terapia de Reemplazo Hormonal (TRH), Trombofilias."
+                ],
+                diagnostico: [
+                    "<span class='subheading'>1. Algoritmo Diagnóstico (MINSAL):</span>",
+                    "<strong>Evaluación de Probabilidad Clínica:</strong> Utilizar scores como <strong>Wells</strong> o <strong>Ginebra</strong>. Esto determina el siguiente paso.",
+                    "<span class='subheading'>2. Dímero-D (si Probabilidad Baja/Intermedia):</span>",
+                    "Si es <strong>Negativo</strong>, se <strong>descarta</strong> TEP. Si es positivo, se debe avanzar a imagen.",
+                    "<span class='subheading'>3. Imagen Confirmatoria (Si Probabilidad Alta o Dímero-D +):</span>",
+                    "<strong>AngioTAC de Tórax (Gold Standard):</strong> Permite visualizar el trombo en la circulación arterial pulmonar.",
+                    "<strong>Alternativa:</strong> Cintigrafía V/Q (en casos de IRC avanzada o alergia al contraste).",
+                    "<span class='subheading'>🚨 Triage y Hospitalización:</span>",
+                    "<strong>Hospitalizar siempre.</strong>",
+                    "<strong>Alto Riesgo/Masivo (UCI):</strong> Shock o Hipotensión persistente (PAS < 90 mmHg).",
+                    "<strong>Riesgo Intermedio-Alto:</strong> Disfunción del Ventrículo Derecho (por Ecocardiograma o biomarcadores)."
+                ],
+                tratamiento: [
+                    "<span class='subheading'>1. Soporte Vital:</span>",
+                    "Oxigenoterapia, monitorización hemodinámica.",
+                    "Manejo de la hipotensión/shock (fluidos y vasopresores).",
+                    "<span class='subheading'>2. Anticoagulación (Pilar):</span>",
+                    "Iniciar inmediatamente si la sospecha clínica es alta. Se usa <strong>Heparina de Bajo Peso Molecular (HBPM)</strong> o Heparina no fraccionada.",
+                    "Continuación: <strong>Anticoagulantes Orales Directos (ACOD)</strong> o Antagonistas de Vitamina K (TACO) por 3-6 meses.",
+                    "<span class='subheading'>3. Reperfusión (Solo en TEP de Alto Riesgo/Masivo):</span>",
+                    "Trombolisis sistémica (Streptoquinasa, Alteplasa).",
+                    "Embolectomía quirúrgica o por catéter (reservado para centros especializados).",
+                    "<span class='subheading'>✅ Prevención y Seguimiento:</span>",
+                    "<strong>Prevención:</strong> Tromboprofilaxis en pacientes quirúrgicos o con inmovilización prolongada (HBPM o DVT). Medias de compresión.",
+                    "<strong>Seguimiento:</strong> El tiempo de anticoagulación (3, 6, o indefinido) depende del factor de riesgo: si es provocado (cirugía) vs. no provocado."
+                ]
+            }
+        };
+
+        function renderContent(pathologyId) {
+            const data = pathologyData[pathologyId];
+            if (!data || !data.clinica || data.clinica.length === 0) {
+                return '<p class="text-slate-500">Información de clínica no disponible.</p>';
+            }
+
+            let htmlItems = '';
+            let casoClinico = '';
+            let ddxContent = '';
+            const casoTag = "<strong>*️⃣ Caso Clínico Tipo:</strong>";
+
+            // 1. Separar la lista de síntomas del caso clínico
+            data.clinica.forEach(item => {
+                if (item.startsWith(casoTag)) {
+                    const content = item.substring(casoTag.length).trim();
+                    casoClinico = `
+                        <div class="caso-clinico">
+                            <p class="font-bold text-blue-800 not-italic mb-1">📋 Caso Clínico Tipo:</p>
+                            <p>${content}</p>
+                        </div>
+                    `;
+                } else {
+                    htmlItems += `<li>${item}</li>`;
+                }
+            });
+
+            const htmlList = `<ul class="list-disc space-y-2 pl-5 text-slate-700">${htmlItems}</ul>`;
+
+            // 2. Generar la caja de Diagnósticos Diferenciales
+            if (data.ddx && data.ddx.length > 0) {
+                let ddxList = '<ul class="list-disc space-y-1 pl-4 text-slate-700">';
+                data.ddx.forEach(item => {
+                    ddxList += `<li>${item}</li>`;
+                });
+                ddxList += '</ul>';
+
+                ddxContent = `
+                    <div class="ddx-box">
+                        <p class="font-bold text-emerald-800 mb-2">💡 Diagnósticos Diferenciales (DDx):</p>
+                        ${ddxList}
+                    </div>
+                `;
+            }
+
+            // Devolver la lista de síntomas + Caso Clínico Tipo + DDx
+            return htmlList + casoClinico + ddxContent;
+        }
+
+        function renderTabContent(contentArray) {
+            if (!contentArray || contentArray.length === 0) {
+                return '<p class="text-slate-500">Información no disponible.</p>';
+            }
+            let html = '<ul class="list-disc space-y-2 pl-5 text-slate-700">';
+            contentArray.forEach(item => {
+                // Verificar si es un subtítulo para aplicar el formato
+                if (item.includes("span class='subheading'")) {
+                     // Cerrar la lista anterior, insertar el subtítulo y abrir una nueva lista
+                     html += `</ul><div class="mt-4">${item}</div><ul class="list-disc space-y-2 pl-5 text-slate-700">`;
+                } else {
+                     html += `<li>${item}</li>`;
+                }
+            });
+            html += '</ul>';
+            // Limpiar si hay un ul vacío al inicio o final debido al split de subtítulos
+            return html.replace('<ul class="list-disc space-y-2 pl-5 text-slate-700"></ul>', '');
+        }
+
+
+        function selectTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active-tab');
+            });
+            document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active-tab');
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        function buildImageCards(pathologyId, images) {
+            if (!images || images.length === 0) return '';
+
+            let htmlCards = '';
+            images.forEach(imageSrc => {
+                let imageElement = '';
+                if (imageSrc === 'placeholder-tep') {
+                    // Placeholder genérico para TEP (por si falla la imagen real)
+                    imageElement = `
+                        <div class="placeholder-tep p-4">
+                            <span class="text-4xl mb-3">🩸</span>
+                            <p class="font-semibold text-center text-sm">Ficha de Presentación</p>
+                            <p class="text-xs text-center mt-1">TEP</p>
+                        </div>
+                    `;
+                } else {
+                    // Manejo de errores para las imágenes
+                    imageElement = `<img src="${imageSrc}" alt="Presentación de ${pathologyData[pathologyId].nombre}" onerror="this.onerror=null; this.src='https://placehold.co/250x250/cccccc/333333?text=Error+Imagen';" >`;
+                }
+                htmlCards += `<div class="pathology-image-card">${imageElement}</div>`;
+            });
+
+            return htmlCards;
+        }
+
+        function selectPathology(pathologyId) {
+            document.querySelectorAll('.pathology-btn').forEach(btn => {
+                btn.classList.remove('active-pathology');
+            });
+            document.querySelector(`.pathology-btn[data-id="${pathologyId}"]`).classList.add('active-pathology');
+
+            document.getElementById('pathology-welcome').classList.add('hidden');
+            document.getElementById('pathology-details').classList.remove('hidden');
+            
+            const data = pathologyData[pathologyId];
+            if (!data) return;
+
+            document.getElementById('pathology-title').textContent = data.nombre;
+
+            // Renderizar la(s) imagen(es) en el contenedor principal (debajo del título)
+            const imageContainer = document.getElementById('pathology-image-container');
+            if (data.image) {
+                // Asegurarse de que data.image sea un array para buildImageCards
+                const imagesArray = Array.isArray(data.image) ? data.image : [data.image];
+                imageContainer.innerHTML = buildImageCards(pathologyId, imagesArray);
+            } else {
+                imageContainer.innerHTML = ''; // Limpiar si no hay imágenes
+            }
+            
+            // Renderizar contenido textual en las pestañas
+            document.getElementById('tab-clinica').innerHTML = `
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Manifestaciones Clínicas</h3>
+                ${renderContent(pathologyId)}
+            `;
+            document.getElementById('tab-anamnesis').innerHTML = `
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Anamnesis Próxima y Factores de Riesgo</h3>
+                ${renderTabContent(data.anamnesis)}
+            `;
+            document.getElementById('tab-diagnostico').innerHTML = renderTabContent(data.diagnostico);
+            document.getElementById('tab-tratamiento').innerHTML = renderTabContent(data.tratamiento);
+
+            selectTab('clinica');
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('pathology-menu').addEventListener('click', (e) => {
+                const btn = e.target.closest('.pathology-btn');
+                if (btn) {
+                    selectPathology(btn.dataset.id);
+                }
+            });
+
+            document.getElementById('pathology-details').addEventListener('click', (e) => {
+                if (e.target.classList.contains('tab-btn')) {
+                    selectTab(e.target.dataset.tab);
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
