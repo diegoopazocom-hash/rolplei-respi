@@ -162,16 +162,18 @@
             <div class="flex flex-col md:flex-row mt-4 gap-4">
                 <aside class="w-full md:w-1/4 lg:w-1/5">
                     <nav id="pathology-menu" class="bg-white p-4 rounded-lg shadow">
-                        <h3 class="text-lg font-semibold mb-2 text-slate-800">Enfermedades (10) 📚</h3>
+                        <h3 class="text-lg font-semibold mb-2 text-slate-800">Enfermedades (11) 📚</h3>
                         <ul class="space-y-1">
                             <li><button data-id="neumonia" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Neumonía Bacteriana</button></li>
                             <li><button data-id="asma" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Asma</button></li>
                             <li><button data-id="covid19" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">COVID-19</button></li>
-                            <li><button data-id="tbc" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">TBC Pulmonar</button></li>
                             <li><button data-id="cancer" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Cáncer Pulmonar</button></li>
                             <li><button data-id="empiema" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Empiema Pleural</button></li>
                             <li><button data-id="absceso" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Absceso Pulmonar</button></li>
                             <li><button data-id="bronquitis" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Bronquitis Aguda</button></li>
+                            
+                            <li><button data-id="fpi" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">Fibrosis Pulmonar Intersticial</button></li>
+                            <li><button data-id="tbc" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100">TBC Pulmonar</button></li>
                             <!-- Patologías Adicionales/Importantes (Marcadas con *) -->
                             <li><hr class="my-2 border-slate-200"></li>
                             <li><button data-id="epoc" class="pathology-btn w-full text-left p-2 rounded hover:bg-slate-100 font-medium">* EPOC</button></li>
@@ -325,7 +327,7 @@
                     "Bronquitis Aguda (si síntomas respiratorios leves sin disnea ni fiebre)."
                 ],
                 anamnesis: [
-                    "<span class='subheading'>Anamnesis Próxima (Evolución y Contacto):</span>",
+                    "<span class='subheading'>Anamnesis Próxima (Evolución):</span>",
                     "Indagar sobre la <strong>exposición o contacto</strong> con caso confirmado en los últimos 14 días.",
                     "Evaluar la progresión de la disnea y la saturación de oxígeno (o uso de oxímetro en casa).",
                     "<span class='subheading'>Factores de Riesgo (FR) para Enfermedad Grave:</span>",
@@ -539,7 +541,7 @@
                     "<span class='subheading'>Decisión Multidisciplinaria (Comité Oncológico):</span>",
                     "<strong>Enfermedad Localizada (Etapas I y II):</strong> La <strong>Cirugía (Lobectomía)</strong> es la opción con intento curativo.",
                     "<strong>Enfermedad Locorregional (Etapa III):</strong> Se utiliza terapia combinada: <strong>Quimioterapia + Radioterapia</strong>.",
-                    "<strong>Enfermedad Avanzada (Etapa IV):</strong>",
+                    "<strong>Enfermedad Avanzada (Etapas IV):</strong>",
                     "<strong>Terapia Dirigida:</strong> Si se encuentran mutaciones genéticas específicas (ej. EGFR, ALK).",
                     "<strong>Inmunoterapia:</strong> (Ej. Inhibidores de PD-1/PD-L1).",
                     "<strong>Cuidados Paliativos:</strong> Manejo de síntomas y calidad de vida.",
@@ -547,6 +549,54 @@
                     "<strong>Prevención Primaria:</strong> <strong>Cese Tabáquico es la medida más efectiva.</strong>",
                     "<strong>Screening (Detección Precoz):</strong> TAC de baja dosis anual en fumadores pesados de alto riesgo (Guías internacionales, aún no MINSAL).",
                     "<strong>Seguimiento:</strong> Estricto control oncológico según el esquema de tratamiento."
+                ]
+            },
+            fpi: {
+                nombre: "Fibrosis Pulmonar Intersticial (FPI)",
+                image: ["https://placehold.co/250x250/5D9FCF/ffffff?text=Fibrosis+Pulmonar", "https://placehold.co/250x250/5D9FCF/ffffff?text=Rx+Tórax+FPI"],
+                clinica: [
+                    "<strong>Patrón:</strong> Enfermedad intersticial crónica, progresiva y de etiología desconocida.",
+                    "<strong>Síntomas Cardinales:</strong> Disnea de esfuerzo progresiva (el síntoma más común). Tos seca persistente.",
+                    "<strong>Signos Físicos Clave:</strong> <strong>Crépitos secos tipo 'Velcro'</strong> (audibles en ambas bases pulmonares, al final de la inspiración). Acropaquia (dedos en palillo de tambor).",
+                    "<strong>Evolución:</strong> Irreversible, lleva a insuficiencia respiratoria.",
+                    "<strong>*️⃣ Caso Clínico Tipo:</strong> Varón de 65 años, ex-fumador, que consulta por disnea de esfuerzo de un año de evolución, inicialmente al subir dos pisos, y ahora al caminar en plano. Refiere tos seca constante. Al examen físico se auscultan crépitos finos inspiratorios de predominio basal y bilaterales, que el médico compara con el sonido de despegar velcro."
+                ],
+                ddx: [
+                    "Otras Enfermedades Pulmonares Intersticiales (EPI): Neumonitis por Hipersensibilidad Crónica (NHC), Asbestosis.",
+                    "Insuficiencia Cardíaca Congestiva (si la disnea es de predominio nocturno y hay edema de extremidades).",
+                    "EPOC (si predominan sibilancias y patrón obstructivo)."
+                ],
+                anamnesis: [
+                    "<span class='subheading'>Anamnesis Próxima (Evolución):</span>",
+                    "Determinar la <strong>progresividad</strong> de la disnea de esfuerzo y el tiempo de evolución (años).",
+                    "Preguntar por el patrón de la tos (típicamente seca y molesta).",
+                    "<span class='subheading'>Factores de Riesgo (FR) y Etiología:</span>",
+                    "<strong>Idiopática:</strong> Es la forma más común (FPI, de etiología desconocida).",
+                    "<strong>Exposición Ocupacional/Ambiental:</strong> Polvo orgánico (NHC), asbesto, sílice (DDx importante).",
+                    "<strong>Otros:</strong> Historia familiar de FPI, tabaquismo (factor asociado)."
+                ],
+                diagnostico: [
+                    "<span class='subheading'>1. Prueba Funcional Pulmonar:</span>",
+                    "<strong>Espirometría:</strong> Patrón restrictivo (CVF y CPT reducidas).",
+                    "<strong>DLCO:</strong> <strong>Severamente reducida</strong> (alteración en la difusión de gases), un hallazgo clave.",
+                    "<span class='subheading'>2. Diagnóstico por Imágenes (Pilar):</span>",
+                    "<strong>TAC de Tórax de Alta Resolución (TCAR):</strong> Muestra el patrón típico de <strong>Neumonía Intersticial Usual (NIU)</strong>: Panalización (honeycombing), bronquiectasias por tracción, y reticulación subpleural y basal.",
+                    "<span class='subheading'>3. Confirmación:</span>",
+                    "El diagnóstico es clínico-radiológico (TCAR). La Biopsia Pulmonar Quirúrgica se reserva si la TCAR no es concluyente.",
+                    "<span class='subheading'>🚨 Triage y Hospitalización:</span>",
+                    "<strong>Banderas Rojas:</strong> Hipoxemia severa en reposo (requerimiento de O2 suplementario), y exacerbación aguda (empeoramiento respiratorio súbito)."
+                ],
+                tratamiento: [
+                    "<span class='subheading'>1. Terapias Antifibróticas (MINSAL - GEAU):</span>",
+                    "<strong>Nintedanib o Pirfenidona:</strong> Fármacos que <strong>ralentizan la progresión de la enfermedad</strong> (no la curan). Indicación de especialista.",
+                    "<span class='subheading'>2. Soporte y Rehabilitación:</span>",
+                    "<strong>Oxigenoterapia:</strong> Si hay hipoxemia significativa.",
+                    "<strong>Rehabilitación Pulmonar:</strong> Fundamental para mejorar la tolerancia al ejercicio y la calidad de vida.",
+                    "<span class='subheading'>3. Tratamiento Definitivo:</span>",
+                    "<strong>Trasplante Pulmonar:</strong> Única opción curativa. Considerado en pacientes seleccionados menores de 65 años.",
+                    "<span class='subheading'>✅ Prevención y Seguimiento:</span>",
+                    "<strong>Prevención:</strong> Identificación y cese de exposiciones ambientales/laborales (si aplica).",
+                    "<strong>Seguimiento:</strong> Control estricto por Neumología. Monitorización seriada de la <strong>función pulmonar (CVF y DLCO)</strong> y la saturación de oxígeno."
                 ]
             },
             tbc: {
@@ -855,4 +905,3 @@
     </script>
 </body>
 </html>
-
